@@ -7,7 +7,7 @@ import '@openzeppelin/contracts/token/ERC721/IERC721.sol';
 import '@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol';
 import '@openzeppelin/contracts/utils/ReentrancyGuard.sol';
 
-contract LiquidityLocks is ERC721Enumerable, IERC721Receiver, ReentrancyGuard {
+contract NFTLock is ERC721Enumerable, IERC721Receiver, ReentrancyGuard {
   uint256 internal _lockIds;
 
   struct Lock {
@@ -68,7 +68,7 @@ contract LiquidityLocks is ERC721Enumerable, IERC721Receiver, ReentrancyGuard {
     uint256 tokenId,
     bytes calldata datas
   ) external override nonReentrant returns (bytes4) {
-    (address recipient, uint256 unlockDate, bool transferable) = abi.decode(data, (address, uint256, bool));
+    (address recipient, uint256 unlockDate, bool transferable) = abi.decode(datas, (address, uint256, bool));
     if (recipient == address(0)) {
       recipient = from;
     }
@@ -93,8 +93,7 @@ contract LiquidityLocks is ERC721Enumerable, IERC721Receiver, ReentrancyGuard {
     emit NFTUnlocked(lockId);
   }
 
-
-/*********************************INTERNAL FUNCTIONS **********************************************************/
+  /*********************************INTERNAL FUNCTIONS **********************************************************/
 
   function _lockNFT(address recipient, Lock memory lock) internal returns (uint256 lockId) {
     lockId = incrementLockId();

@@ -1,7 +1,7 @@
-require('@nomiclabs/hardhat-etherscan');
-require('@nomiclabs/hardhat-waffle');
+require("@nomicfoundation/hardhat-ethers");
+require('@nomicfoundation/hardhat-chai-matchers');
+require('@nomicfoundation/hardhat-verify');
 require('hardhat-gas-reporter');
-require('hardhat-deploy');
 require('dotenv').config();
 
 module.exports = {
