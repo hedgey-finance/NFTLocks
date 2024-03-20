@@ -24,7 +24,13 @@ module.exports = () => {
             transferable: true,
         };
         let tx = await nftLock.connect(a).lockNFT(a.address, lock1);
-        
+        expect(await nftLock.ownerOf(1)).to.eq(a.address);
+        expect(await nft.ownerOf(1)).to.eq(nftLock.target);
+        const _lock1 = await nftLock.locks(1);
+        expect(_lock1.nft).to.eq(nft.target);
+        expect(_lock1.tokenId).to.eq(1);
+        expect(_lock1.unlockDate).to.eq(lock1.unlockDate);
+        expect(_lock1.transferable).to.eq(lock1.transferable);
 
         let lock2 = {
             nft: nft.target,
@@ -35,5 +41,13 @@ module.exports = () => {
         const abiCoder = new ethers.AbiCoder()
         let data = abiCoder.encode(['address', 'uint256', 'bool'], [b.address, lock2.unlockDate, lock2.transferable]);
         let tx2 = await nft.connect(a).transferWithData(nftLock.target, '2', data);
+        expect(await nftLock.ownerOf(2)).to.eq(b.address);
+        expect(await nft.ownerOf(2)).to.eq(nftLock.target);
+        const _lock2 = await nftLock.locks(2);
+        console.log(_lock2)
+        expect(_lock2.nft).to.eq(nft.target);
+        expect(_lock2.tokenId).to.eq(2);
+        expect(_lock2.unlockDate).to.eq(lock2.unlockDate);
+        expect(_lock2.transferable).to.eq(lock2.transferable);
     })
 }
