@@ -11,3 +11,8 @@ describe('Testing the core Lock Functions', () => {
   lockTests();
   lockErrorTests();
 });
+
+describe('Testing the transfer functions', () => {
+    transferTests();
+    transferErrorTests();
+})
