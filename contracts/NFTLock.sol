@@ -21,10 +21,8 @@ contract NFTLock is ERC721Enumerable, IERC721Receiver, ReentrancyGuard {
 
   event LockCreated(
     uint256 indexed lockId,
-    address indexed nft,
-    uint256 indexed tokenId,
-    uint256 unlockDate,
-    bool transferable
+    address indexed recipient,
+    Lock lock
   );
   event LockExtended(uint256 indexed lockId, uint256 newUnlockDate);
   event NFTUnlocked(uint256 indexed lockId);
@@ -54,7 +52,6 @@ contract NFTLock is ERC721Enumerable, IERC721Receiver, ReentrancyGuard {
 
   function lockNFT(address recipient, Lock memory lock) external nonReentrant returns (uint256 lockId) {
     require(lock.nft != address(0), '!nftaddress');
-    require(lock.tokenId != 0, '!tokenId');
     if (recipient == address(0)) {
       recipient = msg.sender;
     }
@@ -77,7 +74,7 @@ contract NFTLock is ERC721Enumerable, IERC721Receiver, ReentrancyGuard {
     return this.onERC721Received.selector;
   }
 
-  function extendLockDuration(uint256 lockId, uint256 newUnlockDate) external nonReentrant {
+  function extendLock(uint256 lockId, uint256 newUnlockDate) external nonReentrant {
     require(ownerOf(lockId) == msg.sender, '!owner');
     require(newUnlockDate > locks[lockId].unlockDate, '!future');
     locks[lockId].unlockDate = newUnlockDate;
@@ -99,7 +96,7 @@ contract NFTLock is ERC721Enumerable, IERC721Receiver, ReentrancyGuard {
     lockId = incrementLockId();
     _mint(recipient, lockId);
     locks[lockId] = lock;
-    emit LockCreated(lockId, lock.nft, lock.tokenId, lock.unlockDate, lock.transferable);
+    emit LockCreated(lockId, recipient, lock);
   }
 
   function _update(address to, uint256 lockId, address auth) internal virtual override returns (address) {

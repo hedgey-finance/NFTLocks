@@ -4,7 +4,16 @@ pragma solidity 0.8.24;
 import '@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol';
 
 contract NFT is ERC721Enumerable {
-  constructor() ERC721('NFT', 'NFT') {}
+
+  string _uri;
+
+  constructor(string memory uri) ERC721('NFT', 'NFT') {
+    _uri = uri;
+  }
+
+  function _baseURI() internal view virtual override returns (string memory) {
+    return _uri;
+  }
 
   function mint(address to, uint256 tokenId) external {
     _mint(to, tokenId);

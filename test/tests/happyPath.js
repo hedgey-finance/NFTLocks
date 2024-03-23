@@ -31,7 +31,8 @@ module.exports = () => {
         expect(_lock1.tokenId).to.eq(1);
         expect(_lock1.unlockDate).to.eq(lock1.unlockDate);
         expect(_lock1.transferable).to.eq(lock1.transferable);
-
+        let tokenURI = await nft.tokenURI(1);
+        expect(await nftLock.tokenURI(1)).to.eq(tokenURI);
         let lock2 = {
             nft: nft.target,
             tokenId: 2,
@@ -66,7 +67,7 @@ module.exports = () => {
         await time.increaseTo(lock2.unlockDate);
         now = BigInt(await time.latest());
         let extendedUnlock = now + BigInt(100);
-        await nftLock.connect(b).extendLockDuration(2, extendedUnlock);
+        await nftLock.connect(b).extendLock(2, extendedUnlock);
         _lock2 = await nftLock.locks(2);
         expect(_lock2.unlockDate).to.eq(extendedUnlock);
         await expect(nftLock.connect(b).unlockNFT(2)).to.be.revertedWith('locked');
