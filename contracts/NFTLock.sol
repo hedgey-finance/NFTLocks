@@ -24,8 +24,8 @@ contract NFTLock is ERC721Enumerable, IERC721Receiver, ReentrancyGuard {
     address indexed recipient,
     Lock lock
   );
-  event LockExtended(uint256 indexed lockId, uint256 newUnlockDate);
-  event NFTUnlocked(uint256 indexed lockId);
+  event LockExtended(uint256 indexed lockId, uint256 indexed tokenId, uint256 newUnlockDate);
+  event NFTUnlocked(uint256 indexed lockId, uint256 indexed tokenId);
 
   constructor(string memory name, string memory symbol) ERC721(name, symbol) {}
 
@@ -78,7 +78,7 @@ contract NFTLock is ERC721Enumerable, IERC721Receiver, ReentrancyGuard {
     require(ownerOf(lockId) == msg.sender, '!owner');
     require(newUnlockDate > locks[lockId].unlockDate, '!future');
     locks[lockId].unlockDate = newUnlockDate;
-    emit LockExtended(lockId, newUnlockDate);
+    emit LockExtended(lockId, locks[lockId].tokenId, newUnlockDate);
   }
 
   function unlockNFT(uint256 lockId) external nonReentrant {
@@ -86,8 +86,8 @@ contract NFTLock is ERC721Enumerable, IERC721Receiver, ReentrancyGuard {
     require(locks[lockId].unlockDate <= block.timestamp, 'locked');
     IERC721(locks[lockId].nft).transferFrom(address(this), msg.sender, locks[lockId].tokenId);
     _burn(lockId);
+    emit NFTUnlocked(lockId, locks[lockId].tokenId);
     delete locks[lockId];
-    emit NFTUnlocked(lockId);
   }
 
   /*********************************INTERNAL FUNCTIONS **********************************************************/

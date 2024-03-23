@@ -62,7 +62,7 @@ const lockTests = () => {
     // it will extend the lock of NFT number 1 by 100 seconds
     let extendedUnlockTime = (await nftLock.locks(1)).unlockDate + BigInt(100);
     let tx = await nftLock.connect(a).extendLock(1, extendedUnlockTime);
-    expect(tx).to.emit(nftLock, 'LockExtended').withArgs(1, extendedUnlockTime);
+    expect(tx).to.emit(nftLock, 'LockExtended').withArgs(1, 1, extendedUnlockTime);
     expect((await nftLock.locks(1)).unlockDate).to.eq(extendedUnlockTime);
     expect(await nftLock.ownerOf(1)).to.eq(a.address);
     expect(await nft.ownerOf(1)).to.eq(nftLock.target);
@@ -71,7 +71,7 @@ const lockTests = () => {
     // it will extend the lock of NFT number 2 by 100 seconds
     let extendedUnlockTime = (await nftLock.locks(2)).unlockDate + BigInt(100);
     let tx = await nftLock.connect(b).extendLock(2, extendedUnlockTime);
-    expect(tx).to.emit(nftLock, 'LockExtended').withArgs(2, extendedUnlockTime);
+    expect(tx).to.emit(nftLock, 'LockExtended').withArgs(2, 2, extendedUnlockTime);
     expect((await nftLock.locks(2)).unlockDate).to.eq(extendedUnlockTime);
     expect(await nftLock.ownerOf(2)).to.eq(b.address);
     expect(await nft.ownerOf(2)).to.eq(nftLock.target);
@@ -80,7 +80,7 @@ const lockTests = () => {
     expect(await nft.ownerOf(2)).to.eq(nftLock.target);
     extendedUnlockTime = extendedUnlockTime + BigInt(100);
     tx = await nftLock.connect(a).extendLock(2, extendedUnlockTime);
-    expect(tx).to.emit(nftLock, 'LockExtended').withArgs(2, extendedUnlockTime);
+    expect(tx).to.emit(nftLock, 'LockExtended').withArgs(2, 2, extendedUnlockTime);
     expect((await nftLock.locks(2)).unlockDate).to.eq(extendedUnlockTime);
     expect(await nftLock.ownerOf(2)).to.eq(a.address);
     expect(await nft.ownerOf(2)).to.eq(nftLock.target);
