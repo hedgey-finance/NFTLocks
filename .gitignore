@@ -109,7 +109,6 @@ artifacts/
 # Cache folder
 cache/
 
-segmentAlgos.js
 
 scripts/methods.js
 
