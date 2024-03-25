@@ -31,6 +31,7 @@ npx hardhat run scripts/deploy.js --network <network-name>
 ```
 
 ## Testnet Deployments
-
+NFTLock: `0x4B916fC53bc8aB7F592a5ec0B28687099ce7f42B`   
+       
 
 ## Mainnet Deployments
