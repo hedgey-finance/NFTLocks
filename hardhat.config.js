@@ -24,16 +24,7 @@ module.exports = {
   networks: {
     sepolia: {
       url: process.env.SEPOLIA_URL,
-      accounts: [process.env.TEST_DEPLOYER_PRIVATE_KEY, process.env.TOKEN_DEPLOYER],
-    },
-    goerli: {
-      url: process.env.GOERLI_URL,
-      accounts: [process.env.TEST_DEPLOYER_PRIVATE_KEY],
-    },
-    optimisticGoerli: {
-      url: process.env.OPTIMISTIC_GOERLI_URL,
-      accounts: [process.env.TEST_DEPLOYER_PRIVATE_KEY, process.env.TOKEN_DEPLOYER],
-      gasPrice: 2000000000,
+      accounts: [process.env.TEST_DEPLOYER_PRIVATE_KEY, process.env.TEST_B],
     },
     mainnet: {
       url: process.env.MAINNET_URL,
@@ -105,35 +96,26 @@ module.exports = {
       url: process.env.PALM_URL,
       accounts: [process.env.DEPLOYER_PRIVATE_KEY, process.env.TOKEN_DEPLOYER],
     },
-    viction: {
-      url: process.env.VICTION_URL,
-      accounts: [process.env.DEPLOYER_PRIVATE_KEY, process.env.NEW_CLAIM_PRIVATE_KEY],
-    },
-    pgn: {
-      url: process.env.PGN_URL,
-      accounts: [process.env.DEPLOYER_PRIVATE_KEY, process.env.TOKEN_DEPLOYER],
-      gasPrice: 1500000000,
-    },
-    lineaTestnet: {
-      url: process.env.LINEAGOERLI_URL,
-      accounts: [process.env.TOKEN_DEPLOYER],
-    },
-    linea: {
-      url: process.env.LINEA_URL,
-      accounts: [process.env.DEPLOYER_PRIVATE_KEY, process.env.TOKEN_DEPLOYER],
-    },
-    shimmer: {
-      url: process.env.SHIMMER_URL,
-      accounts: [process.env.DEPLOYER_PRIVATE_KEY, process.env.TOKEN_DEPLOYER],
-    },
-    zkEvm: {
-      url: process.env.ZKEVM_URL,
-      accounts: [process.env.DEPLOYER_PRIVATE_KEY, process.env.TOKEN_DEPLOYER],
-    },
-    swissDLT: {
-      url: process.env.SWISSDLT_URL,
-      accounts: [process.env.DEPLOYER_PRIVATE_KEY, process.env.NEW_CLAIM_PRIVATE_KEY],
-    },
+    // viction: {
+    //   url: process.env.VICTION_URL,
+    //   accounts: [process.env.DEPLOYER_PRIVATE_KEY, process.env.NEW_CLAIM_PRIVATE_KEY],
+    // },
+    // linea: {
+    //   url: process.env.LINEA_URL,
+    //   accounts: [process.env.DEPLOYER_PRIVATE_KEY, process.env.TOKEN_DEPLOYER],
+    // },
+    // shimmer: {
+    //   url: process.env.SHIMMER_URL,
+    //   accounts: [process.env.DEPLOYER_PRIVATE_KEY, process.env.TOKEN_DEPLOYER],
+    // },
+    // zkEvm: {
+    //   url: process.env.ZKEVM_URL,
+    //   accounts: [process.env.DEPLOYER_PRIVATE_KEY, process.env.TOKEN_DEPLOYER],
+    // },
+    // swissDLT: {
+    //   url: process.env.SWISSDLT_URL,
+    //   accounts: [process.env.DEPLOYER_PRIVATE_KEY,  process.env.TOKEN_DEPLOYER],
+    // },
   },
   etherscan: {
     customChains: [
@@ -143,14 +125,6 @@ module.exports = {
         urls: {
           apiURL: 'https://api.gnosisscan.io/api',
           browserURL: 'https://gnosisscan.io/',
-        },
-      },
-      {
-        network: 'boba',
-        chainId: 288,
-        urls: {
-          apiURL: 'https://api.bobascan.com/api',
-          browserURL: 'https://bobascan.com',
         },
       },
       {
@@ -194,14 +168,6 @@ module.exports = {
         }
       },
       {
-        network: 'pgn',
-        chainId: 424,
-        urls: {
-          apiURL: 'https://explorer.publicgoods.network/api',
-          browserURL: 'https://explorer.publicgoods.network/',
-        }
-      },
-      {
         network: 'evmos',
         chainId: 9001,
         urls: {
@@ -223,14 +189,6 @@ module.exports = {
         urls: {
          apiURL: 'https://api.lineascan.build/api',
          browserURL: 'https://lineascan.build/' 
-        }
-      },
-      {
-        network: 'lineaTestnet',
-        chainId: 59140,
-        urls: {
-          apiURL: 'https://api-goerli.lineascan.build/api',
-          browserURL: 'https://goerli.lineascan.build/',
         }
       },
       {
@@ -268,7 +226,6 @@ module.exports = {
     ],
     apiKey: {
       sepolia: process.env.ETHERSCAN_APIKEY,
-      goerli: process.env.ETHERSCAN_APIKEY,
       mainnet: process.env.ETHERSCAN_APIKEY,
       gnosis: process.env.GNOSIS_APIKEY,
       arbitrumOne: process.env.ARBITRUM_APIKEY,
@@ -283,15 +240,12 @@ module.exports = {
       oec: process.env.OEC_APIKEY,
       evmos: process.env.EVMOS_APIKEY,
       celo: process.env.CELO_APIKEY,
-      optimisticGoerli: process.env.OPTIMISTICGOERLI_APIKEY,
       base: process.env.BASE_APIKEY,
       mantle: process.env.MANTLE_APIKEY,
       palm: process.env.PALM_APIKEY,
-      pgn: process.env.PGN_APIKEY,
       linea: process.env.LINEA_APIKEY,
-      lineaTestnet: process.env.LINEA_APIKEY,
       shimmer: process.env.SHIMMER_APIKEY,
-      viction: process.env.VICTION_APIKEY,
+      // viction: process.env.VICTION_APIKEY,
       zkEvm: process.env.ZKEVM_APIKEY,
       swissDLT: process.env.SWISSDLT_APIKEY,
     },

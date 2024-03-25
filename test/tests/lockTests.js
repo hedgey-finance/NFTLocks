@@ -108,7 +108,10 @@ const lockTests = () => {
       transferable: false,
     };
     const abiCoder = new ethers.AbiCoder();
-    let data = abiCoder.encode(['address', 'uint256', 'bool'], [ethers.ZeroAddress, lock.unlockDate, lock.transferable]);
+    let data = abiCoder.encode(
+      ['address', 'uint256', 'bool'],
+      [ethers.ZeroAddress, lock.unlockDate, lock.transferable]
+    );
     let tx = await nft.connect(admin).transferWithData(nftLock.target, '4', data);
     expect(await nftLock.ownerOf(4)).to.eq(admin.address);
   });
@@ -127,56 +130,40 @@ const lockErrorTests = () => {
     await nft.approve(nftLock.target, 1);
     let now = BigInt(await time.latest());
     lock = {
-        nft: nft.target,
-        tokenId: 1,
-        unlockDate: now + BigInt(100),
-        transferable: false,
-    }
-    await expect(
-      nftLock
-        .connect(b)
-        .lockNFT(b.address, lock)
-    ).to.be.reverted;
+      nft: nft.target,
+      tokenId: 1,
+      unlockDate: now + BigInt(100),
+      transferable: false,
+    };
+    await expect(nftLock.connect(b).lockNFT(b.address, lock)).to.be.reverted;
   });
   it('reverts if a user tries to lock an NFT that is already locked', async () => {
     await nft.approve(nftLock.target, 1);
     let now = BigInt(await time.latest());
     await nftLock.lockNFT(a.address, lock);
-    await expect(
-      nftLock
-        .connect(a)
-        .lockNFT(a.address, lock)
-    ).to.be.reverted;
+    await expect(nftLock.connect(a).lockNFT(a.address, lock)).to.be.reverted;
   });
   it('reverts if the NFT to lock is not approved for transfer', async () => {
     await nft.mint(admin.address, 2);
     let now = BigInt(await time.latest());
     lock = {
-        nft: nft.target,
-        tokenId: 2,
-        unlockDate: now + BigInt(100),
-        transferable: false,
-    }
-    await expect(
-      nftLock
-        .connect(admin)
-        .lockNFT(a.address, lock)
-    ).to.be.reverted;
+      nft: nft.target,
+      tokenId: 2,
+      unlockDate: now + BigInt(100),
+      transferable: false,
+    };
+    await expect(nftLock.connect(admin).lockNFT(a.address, lock)).to.be.reverted;
   });
   it('reverts if the NFT contract address of the lock object is the 0 address', async () => {
     await nft.mint(admin.address, 3);
     let now = BigInt(await time.latest());
     lock = {
-        nft: ethers.ZeroAddress,
-        tokenId: 3,
-        unlockDate: now + BigInt(100),
-        transferable: false,
-    }
-    await expect(
-      nftLock
-        .connect(admin)
-        .lockNFT(a.address, lock)
-    ).to.be.revertedWith('!nftaddress');
+      nft: ethers.ZeroAddress,
+      tokenId: 3,
+      unlockDate: now + BigInt(100),
+      transferable: false,
+    };
+    await expect(nftLock.connect(admin).lockNFT(a.address, lock)).to.be.revertedWith('!nftaddress');
   });
   it('reverts if it does not own the NFT using the transferWithData flow', async () => {
     await nft.mint(admin.address, 4);
@@ -189,9 +176,13 @@ const lockErrorTests = () => {
     };
     const abiCoder = new ethers.AbiCoder();
     let data = abiCoder.encode(['address', 'uint256', 'bool'], [b.address, lock.unlockDate, lock.transferable]);
-    await expect(
-      nft.connect(a).transferWithData(nftLock.target, '4', data)
-    ).to.be.reverted;
+    await expect(nft.connect(a).transferWithData(nftLock.target, '4', data)).to.be.reverted;
+  });
+  it('reverts if someone calles the onERC721Received function without sending the NFT', async () => {
+    let now = BigInt(await time.latest());
+    const abiCoder = new ethers.AbiCoder();
+    let data = abiCoder.encode(['address', 'uint256', 'bool'], [b.address, now, true]);
+    await expect(nftLock.onERC721Received(admin.address, admin.address, '4', data)).to.be.reverted;
   });
 };
 
