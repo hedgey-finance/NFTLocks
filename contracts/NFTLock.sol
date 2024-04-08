@@ -7,6 +7,17 @@ import '@openzeppelin/contracts/token/ERC721/IERC721.sol';
 import '@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol';
 import '@openzeppelin/contracts/utils/ReentrancyGuard.sol';
 
+interface INPM {
+  struct CollectParams {
+    uint256 tokenId;
+    address recipient;
+    uint128 amount0Max;
+    uint128 amount1Max;
+  }
+
+  function collect(CollectParams calldata params) external payable returns (uint256 amount0, uint256 amount1);
+}
+
 /// @title NFTLock is a simple contract to lock NFTs for a period of time
 /// @notice The purpose of the contract is for UniV3 liquidity providers to have the ability to lock their liquidiy for a set amount of tim
 /// @notice while the contract does handle any NFT, it is specifically designed for UniV3 NFTs
@@ -31,17 +42,13 @@ contract NFTLock is ERC721Enumerable, IERC721Receiver, ReentrancyGuard {
   /// @dev mapping the Lock nftIds to the Lock struct, so that the lock information can be retrieved with the public getter function
   mapping(uint256 => Lock) public locks;
 
- /*********************EVENTS*********************************************************************************************/
+  /*********************EVENTS*********************************************************************************************/
 
-  event LockCreated(
-    uint256 indexed lockId,
-    address indexed recipient,
-    Lock lock
-  );
+  event LockCreated(uint256 indexed lockId, address indexed recipient, Lock lock);
   event LockExtended(uint256 indexed lockId, uint256 indexed tokenId, uint256 newUnlockDate);
   event NFTUnlocked(uint256 indexed lockId, uint256 indexed tokenId);
 
-   /*********************CONSTRUCTOR*********************************************************************************************/
+  /*********************CONSTRUCTOR*********************************************************************************************/
 
   constructor(string memory name, string memory symbol) ERC721(name, symbol) {}
 
@@ -126,6 +133,22 @@ contract NFTLock is ERC721Enumerable, IERC721Receiver, ReentrancyGuard {
     _burn(lockId);
     emit NFTUnlocked(lockId, locks[lockId].tokenId);
     delete locks[lockId];
+  }
+
+  function collectFees(uint256 lockId) external nonReentrant returns (uint256 amount0, uint256 amount1) {
+    require(ownerOf(lockId) == msg.sender, '!owner');
+    address npmAddress = locks[lockId].nft;
+    INPM.CollectParams memory params = INPM.CollectParams({
+      tokenId: locks[lockId].tokenId,
+      recipient: msg.sender,
+      amount0Max: type(uint128).max,
+      amount1Max: type(uint128).max
+    });
+    try INPM(npmAddress).collect(params) {
+      (amount0, amount1) = INPM(npmAddress).collect(params);
+    } catch {
+      return (0, 0);
+    }
   }
 
   /*********************************INTERNAL FUNCTIONS **********************************************************/
