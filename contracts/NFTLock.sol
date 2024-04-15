@@ -182,6 +182,9 @@ contract NFTLock is ERC721Enumerable, IERC721Receiver, ReentrancyGuard {
     delete locks[lockId];
   }
 
+  /// @notice Function to collect fees from the locked Uniswapv3 NFT
+  /// the function will transfer tokens back to this address
+  /// then it will use the internal transfer function to transfer the fees to the owner of the NFT and the fee collector
   function collectFees(uint256 lockId) external nonReentrant returns (uint256 amount0, uint256 amount1) {
     require(ownerOf(lockId) == msg.sender, '!owner');
     address npmAddress = locks[lockId].nft;
@@ -210,18 +213,24 @@ contract NFTLock is ERC721Enumerable, IERC721Receiver, ReentrancyGuard {
     emit LockCreated(lockId, recipient, lock);
   }
 
+  /// @dev internal function for calculating fees
+  /// fees can never be set more thatn 10,000 which is in basis points
+  /// function will take total amount * fee amount and divide by 10,000, fee will be deducted from the total amount
   function _feeCalculation(uint256 tokenAmount) internal view returns (uint256) {
     return (tokenAmount * _feePercent) / 10000;
   }
 
+  /// @dev internal funciton to transfer tokens and fees in a single function call
+  /// function checks if the amounts are greater than 0, otherwise ignores them, then calculates the fees
+  /// then transfers the amount less fees to the To address, and the fee amount to the fee collector
   function _transferTokens(address to, address token0, address token1, uint256 amount0, uint256 amount1) internal {
-    uint256 fee0 = _feeCalculation(amount0);
-    uint256 fee1 = _feeCalculation(amount1);
     if (amount0 > 0) {
+      uint256 fee0 = _feeCalculation(amount0);
       IERC20(token0).transfer(to, amount0 - fee0);
       IERC20(token0).transfer(_feeCollector, fee0);
     }
     if (amount1 > 0) {
+       uint256 fee1 = _feeCalculation(amount1);
       IERC20(token1).transfer(to, amount1 - fee1);
       IERC20(token1).transfer(_feeCollector, fee1);
     }
