@@ -48,9 +48,17 @@ contract NFTLock is ERC721Enumerable, IERC721Receiver, ReentrancyGuard {
   /// @dev internal counter for lockIds
   uint256 internal _lockIds;
 
+  /// @dev address of the fee collector
   address internal _feeCollector;
 
-  uint256 internal _feePercent;
+  /// @dev max fee percent that the fee collector can set, in basis points divided by 10,000, set to max of 10%
+  uint256 internal _maxFeePercent;
+
+  /// @dev general fee percent that the fee collector will set for all locks at the time they get locked. Once locked the fee cannot be changed, but each lock will adopt the general fee at the time of locking
+  uint256 internal _generalFeePercent;
+
+  /// @dev mapping of the lockId to the fee percent for each lock that is created at each lock
+  mapping(uint256 => uint256) internal _feePercents;
 
   /// @dev struct to hold the lock information
   /// @param nft is the address of the nft that is being locked
@@ -69,7 +77,7 @@ contract NFTLock is ERC721Enumerable, IERC721Receiver, ReentrancyGuard {
 
   /*********************EVENTS*********************************************************************************************/
 
-  event LockCreated(uint256 indexed lockId, address indexed recipient, Lock lock);
+  event LockCreated(uint256 indexed lockId, address indexed recipient, Lock lock, uint256 feePercent);
   event LockExtended(uint256 indexed lockId, uint256 indexed tokenId, uint256 newUnlockDate);
   event NFTUnlocked(uint256 indexed lockId, uint256 indexed tokenId);
   event NewFeeColletor(address indexed feeCollector);
@@ -77,11 +85,12 @@ contract NFTLock is ERC721Enumerable, IERC721Receiver, ReentrancyGuard {
 
   /*********************CONSTRUCTOR*********************************************************************************************/
 
-  constructor(string memory name, string memory symbol, address feeCollector, uint256 feePercent) ERC721(name, symbol) {
+  constructor(string memory name, string memory symbol, address feeCollector, uint256 feePercent, uint256 maxFee) ERC721(name, symbol) {
     require(feeCollector != address(0), '!feeCollector');
-    require(feePercent < 10000, '!feePercent');
+    require(feePercent < _maxFeePercent, '< maxFee');
     _feeCollector = feeCollector;
-    _feePercent = feePercent;
+    _generalFeePercent = feePercent;
+    _maxFeePercent = maxFee;
   }
 
   /*********************COLLECTOR FUNCTIONS*********************************************************************************************/
@@ -94,8 +103,8 @@ contract NFTLock is ERC721Enumerable, IERC721Receiver, ReentrancyGuard {
 
   function changeFeePercent(uint256 newFeePercent) external {
     require(msg.sender == _feeCollector, '!feeCollector');
-    require(newFeePercent < 10000);
-    _feePercent = newFeePercent;
+    require(newFeePercent < _maxFeePercent, '< maxFee');
+    _generalFeePercent = newFeePercent;
     emit NewFeePercent(newFeePercent);
   }
 
@@ -112,6 +121,9 @@ contract NFTLock is ERC721Enumerable, IERC721Receiver, ReentrancyGuard {
     return _lockIds;
   }
 
+
+  /***********************PUBLIC VIEW FUNCTIONS*********************************************************************/
+
   /// @notice this function pulls the UniNFT URI information and displays it for the lock
   function tokenURI(uint256 lockId) public view virtual override returns (string memory) {
     try IERC721Metadata(locks[lockId].nft).tokenURI(locks[lockId].tokenId) {
@@ -119,6 +131,10 @@ contract NFTLock is ERC721Enumerable, IERC721Receiver, ReentrancyGuard {
     } catch {
       return '';
     }
+  }
+
+  function getLockFee(uint256 lockId) public view returns (uint256) {
+    return _feePercents[lockId];
   }
 
   /****************EXTERNAL LOCK FUNCTIONS ********************************************************/
@@ -197,7 +213,8 @@ contract NFTLock is ERC721Enumerable, IERC721Receiver, ReentrancyGuard {
     try INPM(npmAddress).positions(locks[lockId].tokenId) {
       (amount0, amount1) = INPM(npmAddress).collect(params);
       (, , address token0, address token1, , , , , , , , ) = INPM(npmAddress).positions(locks[lockId].tokenId);
-      _transferTokens(msg.sender, token0, token1, amount0, amount1);
+      uint256 feePercent = _feePercents[lockId];
+      _transferTokens(msg.sender, token0, token1, amount0, amount1, feePercent);
     } catch {
       return (0, 0);
     }
@@ -210,27 +227,28 @@ contract NFTLock is ERC721Enumerable, IERC721Receiver, ReentrancyGuard {
     lockId = incrementLockId();
     _mint(recipient, lockId);
     locks[lockId] = lock;
-    emit LockCreated(lockId, recipient, lock);
+    _feePercents[lockId] = _generalFeePercent;
+    emit LockCreated(lockId, recipient, lock, _generalFeePercent);
   }
 
   /// @dev internal function for calculating fees
   /// fees can never be set more thatn 10,000 which is in basis points
   /// function will take total amount * fee amount and divide by 10,000, fee will be deducted from the total amount
-  function _feeCalculation(uint256 tokenAmount) internal view returns (uint256) {
-    return (tokenAmount * _feePercent) / 10000;
+  function _feeCalculation(uint256 tokenAmount, uint256 feePercent) internal pure returns (uint256) {
+    return (tokenAmount * feePercent) / 10000;
   }
 
   /// @dev internal funciton to transfer tokens and fees in a single function call
   /// function checks if the amounts are greater than 0, otherwise ignores them, then calculates the fees
   /// then transfers the amount less fees to the To address, and the fee amount to the fee collector
-  function _transferTokens(address to, address token0, address token1, uint256 amount0, uint256 amount1) internal {
+  function _transferTokens(address to, address token0, address token1, uint256 amount0, uint256 amount1, uint256 feePercent) internal {
     if (amount0 > 0) {
-      uint256 fee0 = _feeCalculation(amount0);
+      uint256 fee0 = _feeCalculation(amount0, feePercent);
       IERC20(token0).transfer(to, amount0 - fee0);
       IERC20(token0).transfer(_feeCollector, fee0);
     }
     if (amount1 > 0) {
-       uint256 fee1 = _feeCalculation(amount1);
+       uint256 fee1 = _feeCalculation(amount1, feePercent);
       IERC20(token1).transfer(to, amount1 - fee1);
       IERC20(token1).transfer(_feeCollector, fee1);
     }
