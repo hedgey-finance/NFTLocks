@@ -6,6 +6,7 @@ import '@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol';
 import '@openzeppelin/contracts/token/ERC721/IERC721.sol';
 import '@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol';
 import '@openzeppelin/contracts/utils/ReentrancyGuard.sol';
+import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 
 interface INPM {
   struct CollectParams {
@@ -14,6 +15,26 @@ interface INPM {
     uint128 amount0Max;
     uint128 amount1Max;
   }
+
+  function positions(
+    uint256 tokenId
+  )
+    external
+    view
+    returns (
+      uint96 nonce,
+      address operator,
+      address token0,
+      address token1,
+      uint24 fee,
+      int24 tickLower,
+      int24 tickUpper,
+      uint128 liquidity,
+      uint256 feeGrowthInside0LastX128,
+      uint256 feeGrowthInside1LastX128,
+      uint128 tokensOwed0,
+      uint128 tokensOwed1
+    );
 
   function collect(CollectParams calldata params) external payable returns (uint256 amount0, uint256 amount1);
 }
@@ -26,6 +47,10 @@ interface INPM {
 contract NFTLock is ERC721Enumerable, IERC721Receiver, ReentrancyGuard {
   /// @dev internal counter for lockIds
   uint256 internal _lockIds;
+
+  address internal _feeCollector;
+
+  uint256 internal _feePercent;
 
   /// @dev struct to hold the lock information
   /// @param nft is the address of the nft that is being locked
@@ -47,10 +72,32 @@ contract NFTLock is ERC721Enumerable, IERC721Receiver, ReentrancyGuard {
   event LockCreated(uint256 indexed lockId, address indexed recipient, Lock lock);
   event LockExtended(uint256 indexed lockId, uint256 indexed tokenId, uint256 newUnlockDate);
   event NFTUnlocked(uint256 indexed lockId, uint256 indexed tokenId);
+  event NewFeeColletor(address indexed feeCollector);
+  event NewFeePercent(uint256 indexed feePercent);
 
   /*********************CONSTRUCTOR*********************************************************************************************/
 
-  constructor(string memory name, string memory symbol) ERC721(name, symbol) {}
+  constructor(string memory name, string memory symbol, address feeCollector, uint256 feePercent) ERC721(name, symbol) {
+    require(feeCollector != address(0), '!feeCollector');
+    require(feePercent < 10000, '!feePercent');
+    _feeCollector = feeCollector;
+    _feePercent = feePercent;
+  }
+
+  /*********************COLLECTOR FUNCTIONS*********************************************************************************************/
+
+  function changeFeeCollector(address newCollector) external {
+    require(msg.sender == _feeCollector, '!feeCollector');
+    _feeCollector = newCollector;
+    emit NewFeeColletor(newCollector);
+  }
+
+  function changeFeePercent(uint256 newFeePercent) external {
+    require(msg.sender == _feeCollector, '!feeCollector');
+    require(newFeePercent < 10000);
+    _feePercent = newFeePercent;
+    emit NewFeePercent(newFeePercent);
+  }
 
   /*****TOKEN ID FUNCTIONS*************************************************************************************/
 
@@ -140,12 +187,14 @@ contract NFTLock is ERC721Enumerable, IERC721Receiver, ReentrancyGuard {
     address npmAddress = locks[lockId].nft;
     INPM.CollectParams memory params = INPM.CollectParams({
       tokenId: locks[lockId].tokenId,
-      recipient: msg.sender,
+      recipient: address(this),
       amount0Max: type(uint128).max,
       amount1Max: type(uint128).max
     });
-    try INPM(npmAddress).collect(params) {
+    try INPM(npmAddress).positions(locks[lockId].tokenId) {
       (amount0, amount1) = INPM(npmAddress).collect(params);
+      (, , address token0, address token1, , , , , , , , ) = INPM(npmAddress).positions(locks[lockId].tokenId);
+      _transferTokens(msg.sender, token0, token1, amount0, amount1);
     } catch {
       return (0, 0);
     }
@@ -159,6 +208,23 @@ contract NFTLock is ERC721Enumerable, IERC721Receiver, ReentrancyGuard {
     _mint(recipient, lockId);
     locks[lockId] = lock;
     emit LockCreated(lockId, recipient, lock);
+  }
+
+  function _feeCalculation(uint256 tokenAmount) internal view returns (uint256) {
+    return (tokenAmount * _feePercent) / 10000;
+  }
+
+  function _transferTokens(address to, address token0, address token1, uint256 amount0, uint256 amount1) internal {
+    uint256 fee0 = _feeCalculation(amount0);
+    uint256 fee1 = _feeCalculation(amount1);
+    if (amount0 > 0) {
+      IERC20(token0).transfer(to, amount0 - fee0);
+      IERC20(token0).transfer(_feeCollector, fee0);
+    }
+    if (amount1 > 0) {
+      IERC20(token1).transfer(to, amount1 - fee1);
+      IERC20(token1).transfer(_feeCollector, fee1);
+    }
   }
 
   /// @dev internal function overriding the _update function that checks if the lock NFT is transferable or not
