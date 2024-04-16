@@ -95,17 +95,28 @@ contract NFTLock is ERC721Enumerable, IERC721Receiver, ReentrancyGuard {
 
   /*********************COLLECTOR FUNCTIONS*********************************************************************************************/
 
-  function changeFeeCollector(address newCollector) external {
+  modifier onlyFeeCollector() {
     require(msg.sender == _feeCollector, '!feeCollector');
+    _;
+  }
+
+  function changeFeeCollector(address newCollector) external onlyFeeCollector {
     _feeCollector = newCollector;
     emit NewFeeColletor(newCollector);
   }
 
-  function changeFeePercent(uint256 newFeePercent) external {
-    require(msg.sender == _feeCollector, '!feeCollector');
+  function changeFeePercent(uint256 newFeePercent) external onlyFeeCollector {
     require(newFeePercent < _maxFeePercent, '< maxFee');
     _generalFeePercent = newFeePercent;
     emit NewFeePercent(newFeePercent);
+  }
+
+  function getFeeCollector() external view returns (address) {
+    return _feeCollector;
+  }
+
+  function getFeePercent() external view returns (uint256) {
+    return _generalFeePercent;
   }
 
   /*****TOKEN ID FUNCTIONS*************************************************************************************/
