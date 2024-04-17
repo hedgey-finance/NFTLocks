@@ -13,4 +13,7 @@ async function deploy(artifact, args) {
     });
 }
 
-deploy('NFTLock', ['HedgeyV3LiquidityLocks', 'HVLL']);
+const collector = '0xF610d3978161347c174d007950C2D477C660aa79';
+const fee = BigInt(5000);
+
+deploy('NFTLock', ['HedgeyV3LiquidityLocks', 'HVLL', collector, fee]);
