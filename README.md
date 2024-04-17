@@ -24,7 +24,7 @@ npx hardhat test
 ```
 
 ## Deployment
-To deploy the NFTLock contract, create a .env file in the main directory with your private key(s), network RPCs and etherscan API keys. Update the ./scripts/deploy.js file with the information required by the constructor arguments (name and symbol), and then you can use hardhat to deploy and verify the contract using the command: 
+To deploy the NFTLock contract, create a .env file in the main directory with your private key(s), network RPCs and etherscan API keys. Update the ./scripts/deploy.js file with the information required by the constructor arguments (name and symbol, feeCollector, feePercent and maxFee). You chouls make sure that the feeCollector is a multi-signature wallet or DAO governance contract for security. You should make sure that when deploying on networks that do not support solidity 8.24 due to dencun upgrade that you set your hardhat back to 8.19 and recompile the file on solidity 8.19. To deploy and verify, use the following hardhat command: 
 
 ``` bash
 npx hardhat run scripts/deploy.js --network <network-name>

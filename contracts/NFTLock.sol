@@ -7,6 +7,7 @@ import '@openzeppelin/contracts/token/ERC721/IERC721.sol';
 import '@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol';
 import '@openzeppelin/contracts/utils/ReentrancyGuard.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
+import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
 interface INPM {
   struct CollectParams {
@@ -85,9 +86,15 @@ contract NFTLock is ERC721Enumerable, IERC721Receiver, ReentrancyGuard {
 
   /*********************CONSTRUCTOR*********************************************************************************************/
 
-  constructor(string memory name, string memory symbol, address feeCollector, uint256 feePercent, uint256 maxFee) ERC721(name, symbol) {
+  constructor(
+    string memory name,
+    string memory symbol,
+    address feeCollector,
+    uint256 feePercent,
+    uint256 maxFee
+  ) ERC721(name, symbol) {
     require(feeCollector != address(0), '!feeCollector');
-    require(feePercent < _maxFeePercent, '< maxFee');
+    require(feePercent <= maxFee, '< maxFee');
     _feeCollector = feeCollector;
     _generalFeePercent = feePercent;
     _maxFeePercent = maxFee;
@@ -106,7 +113,7 @@ contract NFTLock is ERC721Enumerable, IERC721Receiver, ReentrancyGuard {
   }
 
   function changeFeePercent(uint256 newFeePercent) external onlyFeeCollector {
-    require(newFeePercent < _maxFeePercent, '< maxFee');
+    require(newFeePercent <= _maxFeePercent, '< maxFee');
     _generalFeePercent = newFeePercent;
     emit NewFeePercent(newFeePercent);
   }
@@ -131,7 +138,6 @@ contract NFTLock is ERC721Enumerable, IERC721Receiver, ReentrancyGuard {
   function currentLockId() public view returns (uint256) {
     return _lockIds;
   }
-
 
   /***********************PUBLIC VIEW FUNCTIONS*********************************************************************/
 
@@ -252,16 +258,23 @@ contract NFTLock is ERC721Enumerable, IERC721Receiver, ReentrancyGuard {
   /// @dev internal funciton to transfer tokens and fees in a single function call
   /// function checks if the amounts are greater than 0, otherwise ignores them, then calculates the fees
   /// then transfers the amount less fees to the To address, and the fee amount to the fee collector
-  function _transferTokens(address to, address token0, address token1, uint256 amount0, uint256 amount1, uint256 feePercent) internal {
+  function _transferTokens(
+    address to,
+    address token0,
+    address token1,
+    uint256 amount0,
+    uint256 amount1,
+    uint256 feePercent
+  ) internal {
     if (amount0 > 0) {
       uint256 fee0 = _feeCalculation(amount0, feePercent);
-      IERC20(token0).transfer(to, amount0 - fee0);
-      IERC20(token0).transfer(_feeCollector, fee0);
+      SafeERC20.safeTransfer(IERC20(token0), to, amount0 - fee0);
+      SafeERC20.safeTransfer(IERC20(token0), _feeCollector, fee0);
     }
     if (amount1 > 0) {
-       uint256 fee1 = _feeCalculation(amount1, feePercent);
-      IERC20(token1).transfer(to, amount1 - fee1);
-      IERC20(token1).transfer(_feeCollector, fee1);
+      uint256 fee1 = _feeCalculation(amount1, feePercent);
+      SafeERC20.safeTransfer(IERC20(token1), to, amount0 - fee1);
+      SafeERC20.safeTransfer(IERC20(token1), _feeCollector, fee1);
     }
   }
 

@@ -5,7 +5,7 @@ module.exports = async () => {
     const NFT = await ethers.getContractFactory('NFT');
     const NFTLock = await ethers.getContractFactory('NFTLock');
     const nft = await NFT.deploy('URI/');
-    const nftLock = await NFTLock.deploy('NFTLock', 'NFTL', admin.address, BigInt(500));
+    const nftLock = await NFTLock.deploy('NFTLock', 'NFTL', admin.address, BigInt(500), BigInt(501));
     await nft.waitForDeployment();
     await nftLock.waitForDeployment();
     return {
