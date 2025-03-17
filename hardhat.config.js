@@ -24,7 +24,7 @@ module.exports = {
   networks: {
     sepolia: {
       url: process.env.SEPOLIA_URL,
-      accounts: [process.env.TEST_DEPLOYER_PRIVATE_KEY, process.env.TEST_B],
+      accounts: [process.env.TEST_B],
     },
     mainnet: {
       url: process.env.MAINNET_URL,
