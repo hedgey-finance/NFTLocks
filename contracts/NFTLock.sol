@@ -216,10 +216,11 @@ contract NFTLock is ERC721Enumerable, IERC721Receiver, ReentrancyGuard {
   function unlockNFT(uint256 lockId) external nonReentrant {
     require(ownerOf(lockId) == msg.sender, '!owner');
     require(locks[lockId].unlockDate <= block.timestamp, 'locked');
-    IERC721(locks[lockId].nft).transferFrom(address(this), msg.sender, locks[lockId].tokenId);
+    Lock memory lock = locks[lockId];
+    delete locks[lockId];
+    IERC721(lock.nft).transferFrom(address(this), msg.sender, lock.tokenId);
     _burn(lockId);
     emit NFTUnlocked(lockId, locks[lockId].tokenId);
-    delete locks[lockId];
   }
 
   /// @notice Function to collect fees from the locked Uniswapv3 NFT
@@ -282,7 +283,7 @@ contract NFTLock is ERC721Enumerable, IERC721Receiver, ReentrancyGuard {
     }
     if (amount1 > 0) {
       uint256 fee1 = _feeCalculation(amount1, feePercent);
-      SafeERC20.safeTransfer(IERC20(token1), to, amount0 - fee1);
+      SafeERC20.safeTransfer(IERC20(token1), to, amount1 - fee1);
       SafeERC20.safeTransfer(IERC20(token1), _feeCollector, fee1);
     }
   }
